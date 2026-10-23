@@ -173,6 +173,39 @@
       remaining:next?next.start-score:0,
       percent:!hasData?0:next?clamp(Math.round((score-current.start)/(next.start-current.start)*100),0,100):100};
   }
+  // Rank per muscle group. Each exercise counts only for its primary muscle,
+  // so one lift never lifts two groups at once.
+  const GROUPS=[['chest','Bryst',['flat','incline','pushup']],['back','Ryg',['pullup','row','lat']],
+    ['shoulders','Skuldre',['lateral','face']],['biceps','Biceps',['curl','hammer']],['triceps','Triceps',['skull','overhead']]];
+  function placement(score){
+    let index=0;for(let i=1;i<ranks.length;i++)if(score>=ranks[i].start)index=i;
+    const current=ranks[index],next=ranks[index+1];
+    return {index,current,next,percent:next?clamp(Math.round((score-current.start)/(next.start-current.start)*100),0,100):100};
+  }
+  function groupRanks(state){
+    const lifts=strengthLifts(state),sets={};
+    for(const log of state.logs||[])for(const exercise of log.exercises||[]){
+      const key=referenceFor(exercise.name)?.ageKey,count=(exercise.sets||[]).filter(set=>set.done).length;
+      if(key&&count)sets[key]=(sets[key]||0)+count;
+    }
+    return GROUPS.map(([key,label,refs])=>{
+      const own=lifts.filter(lift=>refs.includes(lift.reference.ageKey));
+      const setCount=refs.reduce((sum,ref)=>sum+(sets[ref]||0),0);
+      if(!own.length)return {key,label,hasData:false,lifts:own,sets:setCount};
+      const score=Math.round(own.reduce((sum,lift)=>sum+lift.score,0)/own.length);
+      return {key,label,hasData:true,score,lifts:own,sets:setCount,provisional:own.length<2,...placement(score)};
+    });
+  }
+  function groupRankPanel(state){
+    const groups=groupRanks(state),core=muscles(state).core;
+    const row=g=>{
+      const shade=g.hasData?g.current.shade:'#4a5466';
+      const meta=g.hasData?`${g.lifts.map(l=>safe(l.name)).join(', ')}`:'Ingen understøttede øvelser endnu';
+      return `<div class="group-rank ${g.hasData?'':'empty'}" style="--group-accent:${shade}"><div class="group-rank-emblem">${emblem(shade)}</div><div class="group-rank-main"><div class="group-rank-top"><strong>${g.label}</strong><span class="group-rank-name">${g.hasData?g.current.name:'Ingen rang'}</span></div><div class="group-rank-meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${g.hasData?g.percent:0}" aria-label="${g.label}: placering inden for rangniveau"><span style="width:${g.hasData?g.percent:0}%"></span></div><small>${g.hasData?`Pct. ${g.score}${g.provisional?' · <em>Foreløbig</em>':''} · `:''}${meta}${g.sets?` · ${g.sets} sæt`:''}</small></div></div>`;
+    };
+    const fixed=(label,text)=>`<div class="group-rank empty fixed"><div class="group-rank-emblem">${emblem('#3a4456')}</div><div class="group-rank-main"><div class="group-rank-top"><strong>${label}</strong><span class="group-rank-name">${text}</span></div></div></div>`;
+    return `<section class="muscle-panel"><div class="eyebrow">DINE MUSKELGRUPPER</div><h2>Rang pr. muskel</h2><p>Hver muskelgruppe får sin egen rang ud fra sine øvelser. En øvelse tæller kun for sin primære muskel.</p><div class="group-rank-list">${groups.map(row).join('')}${fixed('Core',core?`${core} sæt · ingen rang`:'Ingen rang')}${fixed('Ben','Deaktiveret')}</div><div class="muscle-note">Core har ingen pålidelige styrkestandarder, så den får ingen rang. En gruppe med kun én øvelse er <strong>foreløbig</strong>, indtil du logger mindst to forskellige øvelser for den.</div></section>`;
+  }
   function muscles(state){
     const result={chest:0,back:0,shoulders:0,arms:0,core:0};
     for(const log of state.logs||[])for(const exercise of log.exercises||[]){
@@ -211,13 +244,12 @@
     return `<section class="body-panel"><div class="body-panel-top"><div><div class="eyebrow">DIT STYRKEHOLOGRAM</div><h2>Din rang. Din energi.</h2></div>${toggle}</div>${stage}<p class="body-caption">${style==='image'?'':'Drej hologrammet med fingeren. '}<span class="body-legend-dot" style="--dot-color:${shade}"></span> Farven viser din FitNotes-rang.</p></section>`;
   }
   function page(state){
-    const r=info(state),counts=muscles(state);
-    const labels=[['chest','Bryst'],['back','Ryg'],['shoulders','Skuldre'],['arms','Arme'],['core','Core']];
+    const r=info(state);
     return `<header class="page-hero"><div><div class="eyebrow">DIN STYRKEPROFIL</div><h1>Din udvikling.</h1><p class="lead">Se, hvordan dine løft placerer sig blandt andre styrketrænende — inklusive push-ups og pull-ups med ekstra vægt.</p></div></header>
     <section class="rank-hero" style="--rank-accent:${r.current.shade}"><div class="rank-emblem">${emblem(r.current.shade)}</div><div class="rank-content"><div class="rank-superline"><span>DIN NUVÆRENDE RANG</span><span>${r.hasData?'LEVEL '+String(r.index+1).padStart(2,'0')+' / 18':'AFVENTER LØFT'}</span></div><h2>${r.hasData?r.current.name:'Ikke placeret'}</h2><div class="rank-description">${!r.hasData?'Registrér dine første sæt for at få en rang':r.provisional?'Foreløbig rang · Registrér mindst 3 forskellige øvelser':`Gns. øvelsespercentil ${r.score} · ${r.next?'Næste rang fra '+r.next.start:'Højeste rang'}`}</div><div class="rank-meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${r.percent}" aria-label="Placering inden for rangniveau"><span style="width:${r.percent}%"></span></div><div class="rank-meter-meta"><span>Gns. løfterpercentil: ${r.hasData?r.score:'—'}</span><span>${r.hasData?r.lifts.length+' øvelser i gennemsnittet':'Ingen registrerede øvelser'}</span></div></div></section>
     <div class="rank-stat-grid"><div><span class="rank-stat-value">${r.lifts.length}</span><span class="rank-stat-label">Øvelser i beregningen</span></div><div><span class="rank-stat-value">${r.hasData?r.score+' %':'—'}</span><span class="rank-stat-label">Gns. øvelsespercentil</span></div><div><span class="rank-stat-value">${fmt(Number(state.profile?.bodyWeightKg)||82)}</span><span class="rank-stat-label">Kropsvægt (kg)</span></div></div>
     ${profileBar(state)}${progressChart(state)}<div class="progress-layout">${hologramPanel(r,state)}
-    <section class="muscle-panel"><div class="eyebrow">DINE MUSKELGRUPPER</div><h2>Træningsfokus</h2><p>Fuldførte sæt fra din historik tæller med her.</p><div class="muscle-list">${labels.map(([key,label])=>`<div class="muscle-line"><div class="muscle-name"><span class="muscle-indicator ${counts[key]?'active':''}"></span><strong>${label}</strong></div><span class="muscle-set-count">${counts[key]?`${counts[key]} sæt`:'Ikke registreret'}</span></div>`).join('')}<div class="muscle-line disabled"><div class="muscle-name"><span class="muscle-indicator"></span><strong>Ben</strong></div><span class="muscle-set-count">Deaktiveret</span></div></div><div class="muscle-note">Hologrammets farve afspejler din styrkerang. Muskeloversigten viser dine gennemførte sæt, hvor samme sæt kan aktivere flere muskelgrupper.</div></section></div>
+    ${groupRankPanel(state)}</div>
     <section class="rank-ladder-panel"><div class="rank-ladder-heading"><div><div class="eyebrow">INTERNATIONALE STYRKENIVEAUER</div><h2>Ranks</h2></div><span>3 niveauer pr. rang</span></div><div class="rank-ladder">${tiers.map((name,i)=>{const first=i*3,shade=colors[i],current=r.hasData&&Math.floor(r.index/3)===i,below=r.hasData&&Math.floor(r.index/3)>i;return `<div class="rank-tile ${current||below?'unlocked':'locked'} ${current?'current':''}" style="--tile-accent:${shade}"><div class="rank-tile-symbol">${emblem(shade)}</div><strong>${name}</strong><div class="rank-tile-dots">${[0,1,2].map(k=>`<span class="${r.hasData&&r.index>=first+k?'filled':''}"></span>`).join('')}</div><small>${['Under top 80 %','Top 80 %','Top 50 %','Top 30 %','Top 15 %','Top 5 %'][i]}</small></div>`;}).join('')}</div><details class="rank-rules"><summary>Hvordan sammenlignes min styrke?</summary><p>Hver understøttet øvelse får en <strong>estimeret percentil</strong> ud fra dit stærkeste sæt i den seneste registrerede træning. For vægtøvelser bruges et estimeret maksløft ud fra kg og højst 15 reps (pull-ups højst 30 reps). <strong>Pull-ups:</strong> indtast kun <strong>ekstra vægt</strong> (fx 20 for kropsvægt + 20 kg; 0 for kun kropsvægt). Både kropsvægt og ekstra vægt tæller med i beregningen. Push-ups sammenlignes primært på gentagelser. Din rang bygger på <strong>gennemsnittet af øvelsernes percentiler</strong> — ikke antallet af workouts eller personlige rekorder. Referenceværdierne kommer fra <a href="https://strengthlevel.com/strength-standards" target="_blank" rel="noopener noreferrer">Strength Levels internationale træningslogs</a> for mænd med en tilnærmet justering for kropsvægt og, hvor der findes aldersdata, alder. Maskiner, variationer og ekstra vægt ved push-ups er mere usikre estimater. <strong>Obs:</strong> Rangeringen gælder sammenlignelige registrerede løftere, <em>ikke</em> verdens samlede befolkning. Gennemsnittet og niveauer over den 95. percentil er FitNotes-estimater, ikke officielle verdensrangeringer.</p></details></section>`;
   }
 
@@ -393,5 +425,5 @@
   }
   // Colours for the 3D hologram. Without a rank it stays unlit and colourless.
   function holoPalette(r){return r.hasData?{color:r.current.shade,...holoColors[r.current.tier]}:{color:'#4a4d52',line:'#6b6e73'};}
-  window.FitProgress={info,muscles,page,teaser,bindChart,paintHologram,holoPalette};
+  window.FitProgress={info,muscles,groupRanks,page,teaser,bindChart,paintHologram,holoPalette};
 })();

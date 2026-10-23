@@ -263,3 +263,21 @@ select.field{appearance:auto}
 .hologram-style{display:inline-flex;gap:3px;padding:3px;border:1px solid #31577b;border-radius:99px;background:#0e1a2b}
 .hologram-style button{border:0;background:transparent;color:#8fbcff;font-size:11px;font-weight:800;padding:6px 11px;border-radius:99px;cursor:pointer}
 .hologram-style button.selected{background:#28466d;color:#e3eeff}
+
+/* Rank per muscle group. */
+.group-rank-list{display:grid;margin-top:18px}
+.group-rank{--group-accent:#4a5466;display:grid;grid-template-columns:38px minmax(0,1fr);gap:12px;align-items:center;padding:13px 0;border-bottom:1px solid #28364a}
+.group-rank:last-child{border-bottom:0}
+.group-rank-emblem{width:38px;height:42px;filter:drop-shadow(0 0 8px color-mix(in srgb,var(--group-accent) 30%,transparent))}
+.group-rank-emblem svg{width:100%;height:100%}
+.group-rank-main{min-width:0}
+.group-rank-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.group-rank-top strong{font-size:14px;font-weight:800}
+.group-rank-name{font:800 13px Manrope,'DM Sans',sans-serif;color:var(--group-accent);white-space:nowrap}
+.group-rank-meter{height:5px;border-radius:99px;background:#26354b;overflow:hidden;margin:8px 0 6px}
+.group-rank-meter span{display:block;height:100%;border-radius:99px;background:var(--group-accent);box-shadow:0 0 10px color-mix(in srgb,var(--group-accent) 60%,transparent)}
+.group-rank small{display:block;font-size:10.5px;line-height:1.5;color:#8697ae;overflow-wrap:anywhere}
+.group-rank small em{font-style:normal;color:#e0b86a;font-weight:800}
+.group-rank.empty .group-rank-name{color:#6d7a8e}
+.group-rank.fixed{opacity:.55}
+.group-rank.fixed .group-rank-emblem{filter:none}

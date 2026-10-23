@@ -11,6 +11,8 @@ FitNotes er en dansk træningsapp (statisk HTML/CSS/JS, ingen build-trin). Selve
   - **3D** (standard): Tripo AI-model (betalt plan), slanket fra 65 MB til ca. 90.000 trekanter. Filer: `dist/holo-mesh.bin` (eget kompakt format "FNH2"), `dist/holo-tex.jpg` (R = neon-linjer, G = kropstone, B = grå pletter) og `dist/holo3d.js` (WebGL). Farves i rangfarven, kan drejes med fingeren og har knapperne Forfra og Bagfra, en lysstribe der scanner op gennem kroppen og en kort glitch hvert 6.–8. sekund.
   - Linjerne er håndrettet: små stumper og "ar"-streger på brystet er fjernet, lænden har rygstrækkere og latissimus, og læggene har skarpe, kantede linjer.
 
+- **Rang pr. muskelgruppe** (panelet "Rang pr. muskel" på Udvikling, `groupRanks` i progress.js): Bryst, Ryg, Skuldre, Biceps og Triceps får hver sin rang ud fra gennemsnittet af deres øvelsers percentiler. Hver øvelse tæller kun for sin primære muskel. Grupper med kun én øvelse er "foreløbige". Core har ingen standarder og får ingen rang.
+
 ## Rangfarver
 
 Bronze `#ce9767`, Silver `#c1d0e2`, Gold `#efca73`, Platinum `#9ae0e5`, Diamond `#88b9ff`, Obsidian `#a99bc9` (3D: næsten sort glaskrop, hvide linjer, violet kant). 3D-hologrammets krop-, kant- og linjefarver pr. rang står i `holoColors` i progress.js, ingen rang: farveløs og mat i 3D.
