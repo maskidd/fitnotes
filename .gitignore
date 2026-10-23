@@ -1,0 +1,14 @@
+# macOS and local tool settings
+.DS_Store
+.claude/
+
+# Generated copies for sharing (rebuilt from dist/)
+*.zip
+FitNotes-hele-appen.html
+FitNotes-til-ChatGPT-v2/
+
+# Old 3D model and files the app no longer uses
+gammel-3d/
+dist/human-silhouette.bin
+dist/body3d-premium.js
+fitnotes-review-fixes.patch
