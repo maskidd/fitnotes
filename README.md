@@ -8,7 +8,7 @@ Dette er en **arbejdskopi** af FitNotes, som skal gennemgås med begge Claude-v�
 2. **Claude Code:** Gennemgå de faktiske filer, kør tests, undersøg eventuelle fejl, og foreslå eller implementér velafgrænsede rettelser i **denne arbejdskopi**. Lever ændrede filer eller en diff og resultatet af tests.
 3. **ChatGPT/Sites:** Integrerer godkendte ændringer i den oprindelige FitNotes-kilde, tester den samlede løsning og publicerer fortsat på **samme FitNotes-side**. Undgå at oprette en konkurrerende offentlig deployment.
 
-Live app: https://maskidd-fitnesslog.maskidd.chatgpt.site/
+Live app: https://maskidd.github.io/fitnotes/ (udgives automatisk fra `dist/` ved hvert push til `main`)
 
 ## Vigtige produktkrav
 
